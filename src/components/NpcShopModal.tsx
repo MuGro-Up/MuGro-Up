@@ -1,6 +1,7 @@
 import { ShopModel } from './ShopModel';
 import { ItemPortrait, armorModelFile, itemModelFile } from './ItemPortrait';
 import { ITEM_CATALOG } from '../data/itemCatalog';
+import { inventorySellValue } from '../data/itemPricing';
 import { getAdminConfigSync } from '../services/adminConfigService';
 import React, { useState } from 'react';
 import { Flame, Gem, ShoppingBag, Sparkles, X } from 'lucide-react';
@@ -219,7 +220,7 @@ export const NpcShopModal: React.FC<NpcShopModalProps> = ({
                 </div>
               ) : (
                 sellableItems.map((it) => {
-                  const val = 1200 + it.enhanceLevel * 450 + (it.rarity === 'ancient' ? 5000 : it.rarity === 'excellent' ? 2500 : 0);
+                  const val = inventorySellValue(it);
                   return (
                     <div
                       key={it.id}

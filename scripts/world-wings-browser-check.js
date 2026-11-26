@@ -5,7 +5,9 @@
   if (!engine?.flyff.actor) throw Error('Engine unavailable');
   const { getStarterItemsForMuClass } = await import('/src/data/muSkillsAndClasses.ts');
   const library = await (await fetch('/mugroup/equipo.json')).json();
-  const assets = [...new Map(Object.entries(library.wings).map(([name, file]) => [file, name])).entries()];
+  const config = await (await fetch('/ADMIN/items.json')).json();
+  const assets = [...new Map([...Object.entries(library.wings).map(([name, file]) => [file, name]),
+    ...config.wingCatalog.map(({glb, name}) => [glb, name])]).entries()];
   const original = engine.flyff.actor.config;
   const originalItems = engine.flyff.getLastEquippedItems();
   const originalMode = engine.mode;
@@ -17,10 +19,10 @@
     for (const cls of ['DK', 'DW', 'DL', 'MG', 'ELF']) {
       for (const sex of ['male', 'female']) {
         const equipment = getStarterItemsForMuClass('fixture', 'Fixture', cls).filter(i => i.slot !== 'wings');
-        for (const [file, name] of assets) {
+        for (const [file, name] of assets) for (const level of [0, 13]) {
           // The map is in selection mode, so these frames test actual rest poses
           // and the wing's own animated mesh without ground movement masking it.
-          const wing = { id: 'fixture-wing', name, slot: 'wings', category: 'wings', isEquipped: true, enhanceLevel: 0 };
+          const wing = { id: 'fixture-wing', name, slot: 'wings', category: 'wings', isEquipped: true, enhanceLevel: level };
           await engine.syncHeroAppearance(cls, [...equipment, wing], sex);
           const actor = engine.flyff.actor;
           const mount = actor.wingSocket;
@@ -42,7 +44,7 @@
                 const y = verts[i] * m[1] + verts[i + 1] * m[5] + verts[i + 2] * m[9] + m[13] - rootY;
                 lowest = Math.min(lowest, y);
                 if (y < 0.08) {
-                  const id = `${cls}/${sex}/${file}`;
+                  const id = `${cls}/${sex}/${file}/+${level}`;
                   failed.set(id, Math.min(y, failed.get(id) ?? Infinity));
                 }
               }

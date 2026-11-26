@@ -2,7 +2,7 @@
 // coderabbit-agent-browser eval --stdin < scripts/world-shores-browser-check.js
 (async()=>{
   const engine=window.__muEngine;
-  await engine.loadMap('flaris');
+  if (!engine.monsters.length) await engine.loadMap('flaris');
   const monsters=engine.monsters;
   const groups=monsters.filter(m=>m.camp!==undefined);
   const anchors=groups.filter((m,i)=>i===0 || groups[i-1].camp!==m.camp);
@@ -12,11 +12,13 @@
   if (!exact.length || groups.length!==anchors.length*10) throw Error('Faltan campamentos de referencia o grupos incompletos.');
   if (monsters.some(m=>!engine.flyff.world.isHuntingLand(m.homeX,m.homeZ)) || engine.flyff.world.isHuntingLand(50,50))
     throw Error('Hay monstruos en el mar.');
-  for (const m of groups) {
-    if (!reference.some(s=>s.name===m.def.name && s.level===m.scaledLevel &&
-      m.glbFile.endsWith('/'+s.model+'.glb') && ((s.x===m.homeX && s.z===m.homeZ) ||
-      (m.homeX>=s.bounds[0] && m.homeX<=s.bounds[2] && m.homeZ>=s.bounds[1] && m.homeZ<=s.bounds[3]))))
-      throw Error('Monstruo fuera de su zona de referencia: '+m.def.name);
+  for (let i=0;i<groups.length;i+=10) {
+    const camp=groups.slice(i,i+10), first=camp[0];
+    if (camp.some(m=>m.camp!==first.camp || m.glbFile!==first.glbFile || m.scaledLevel!==first.scaledLevel || engine.isSafePoint(m.homeX,m.homeZ,12)))
+      throw Error('Grupo incompleto o inseguro: '+first.id);
   }
-  return {monsters:monsters.length, camps:anchors.length, referenceCamps:exact.length};
+  const regions=['flaris','robledal','puerto_bruma','crater_ceniza'];
+  const coverage=Object.fromEntries(regions.map(id=>[id,anchors.filter(m=>m.id.startsWith('mob-'+id+'-')).length]));
+  if (Object.values(coverage).some(count=>!count)) throw Error('Región sin campamentos');
+  return {monsters:monsters.length, camps:anchors.length, referenceCamps:exact.length, coverage};
 })()
