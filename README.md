@@ -1,4 +1,4 @@
-<!-- coderabbit-ai-generated:v1 -->
+<!-- coderabbit-ai-generated:v1 -->.
 
 <!-- coderabbit-ai-generated-section:v1:2fb7eb4a18185e4bcf0327c578fa7c473ac056b8408e290acc6ff2ad6d4d714b -->
 
