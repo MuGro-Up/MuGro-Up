@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CAMP_SIZE, scatterCamps, SpawnGrid } from '../src/game/encounters.ts';
+import { CAMP_SIZE, populateCamps, regionalTemplate, scatterCamps, SpawnGrid } from '../src/game/encounters.ts';
 import { flightHeight } from '../src/game/content/WingRig.ts';
 import { waterGeometry } from '../src/game/content/WaterSurface.ts';
 
@@ -41,6 +41,33 @@ test('flight covers 2 meters without a discontinuity at the next wingbeat', () =
   assert.equal(flightHeight(0), flightHeight(1));
   assert.equal(flightHeight(0.5) - flightHeight(0), 2);
   assert.ok(flightHeight(0.75) < flightHeight(0.5));
+});
+
+test('native camps remain intact and additional camps fill valid land in groups of ten', () => {
+  const sites = [{ x: 210, z: 210, bounds: [200, 200, 220, 220], model: 'aibatt', level: 1, name: 'Aibatt' }];
+  const land = (x:number, z:number) => x < 700 && z < 700 && !(x > 380 && z > 380);
+  const native = scatterCamps('fixture', 768, 100, land, sites);
+  const camps = populateCamps('fixture', 768, 100, land, sites);
+  assert.deepEqual(camps.slice(0, native.length), native);
+  assert.deepEqual(camps, populateCamps('fixture', 768, 100, land, sites));
+  assert.ok(camps.length > native.length);
+  assert.equal(camps.length % CAMP_SIZE, 0);
+  for (let i = 0; i < camps.length; i += CAMP_SIZE) {
+    const group = camps.slice(i, i + CAMP_SIZE);
+    assert.ok(group.every(m => land(m.x, m.z) && m.camp === i / CAMP_SIZE));
+    if (i >= native.length) {
+      assert.ok(group.every(m => Math.hypot(m.x - group[0].x, m.z - group[0].z) <= 12.001));
+      assert.ok(group.every(m => native.every(n => Math.hypot(m.x - n.x, m.z - n.z) >= 72)));
+    }
+  }
+  assert.equal(populateCamps('fixture', 768, 1, land, sites).length, CAMP_SIZE);
+});
+
+test('regional monster levels rise with distance from the protected capital', () => {
+  const choices = [{ level: 1 }, { level: 10 }, { level: 20 }, { level: 25 }];
+  assert.equal(regionalTemplate(choices, 0, 90, 90, 1, 25).level, 1);
+  assert.equal(regionalTemplate(choices, 0, 840, 90, 1, 25).level, 25);
+  assert.ok(regionalTemplate(choices, 0, 465, 90, 1, 25).level > 1);
 });
 
 test('water cells share edges and invalid or duplicate cells emit no extra faces', () => {

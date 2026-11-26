@@ -1,4 +1,5 @@
 import { findHeroAppearance } from '../data/heroAppearances';
+import { inventorySellValue } from '../data/itemPricing';
 import Dexie, { type Table } from 'dexie';
 import {
   DEFAULT_BUTTON_LAYOUTS,
@@ -765,10 +766,7 @@ export async function sellInventoryItem(
     };
   }
 
-  const sellValue = Math.max(
-    450,
-    350 + item.enhanceLevel * 220 + (item.rarity === 'ancient' ? 1800 : item.rarity === 'excellent' ? 950 : 200),
-  );
+  const sellValue = inventorySellValue(item);
   await db.items.delete(item.id);
   const updated = await updateCharacter({
     ...character,

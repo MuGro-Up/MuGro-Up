@@ -632,6 +632,8 @@ export class EquipmentAppearance {
         alignRot = new Vector3(0, 0, 0);
         modelOffset = new Vector3(0, -0.87, -0.14);
         rawAnimatedSpan = 1.27;
+        // The numbered feather models have a lower bind pose than the original.
+        if (/^wing_mugroup_feather0[12]\.glb$/.test(baseName)) modelOffset.y = -0.25;
       } else if (baseName.startsWith('wing_mugroup_angel')) {
         alignRot = new Vector3(0, 0, 0);
         modelOffset = new Vector3(0, -1.02, -0.22);
@@ -673,9 +675,9 @@ export class EquipmentAppearance {
       const wingBackAnchor = new TransformNode(`wing_back_anchor_${Date.now()}`, this.scene);
       wingBackAnchor.parent = wingSocket;
       wingBackAnchor.position.set(0, 0, 0);
-      // Keep the documented Evo wingspan in X/Z. Tall or downward-facing
-      // models need a vertical fit to keep their tips clear of the boots.
-      wingBackAnchor.scaling.set(finalScale, finalScale * verticalFit, finalScale);
+      // Upgrades widen the wings, while their vertical fit remains anchored
+      // to the back so the lower tips do not grow through the character's feet.
+      wingBackAnchor.scaling.set(finalScale, normalizedBase * verticalFit, finalScale);
 
       const wingAlign = new TransformNode(`wing_align_${Date.now()}`, this.scene);
       wingAlign.parent = wingBackAnchor;

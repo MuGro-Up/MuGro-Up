@@ -72,6 +72,39 @@ export function scatterCamps(seed: string, size: number, count: number, allowed:
   return members;
 }
 
+// Fill gaps between the imported spawn rectangles without removing their camps.
+// A camp is admitted only when every member is on hunting land.
+export function populateCamps(seed: string, size: number, count: number, allowed: (x: number, z: number) => boolean, sites: SpawnSite[]): CampMember[] {
+  const native = scatterCamps(seed, size, count, allowed, sites);
+  if (native.length >= count * CAMP_SIZE) return native;
+  const occupied = new SpawnGrid<CampMember>();
+  for (const member of native) occupied.add(member.x, member.z, member);
+  const result = native.slice();
+  const candidates = scatterCamps(seed + ':coverage', size, count, allowed);
+  for (let i = 0; i < candidates.length && result.length < count * CAMP_SIZE; i += CAMP_SIZE) {
+    const group = candidates.slice(i, i + CAMP_SIZE);
+    if (group.some(member => [...occupied.near(member.x, member.z, 72)]
+      .some(other => Math.hypot(other.x - member.x, other.z - member.z) < 72))) continue;
+    const camp = result.length / CAMP_SIZE;
+    for (const member of group) {
+      const placed = { ...member, camp };
+      result.push(placed);
+      occupied.add(placed.x, placed.z, placed);
+    }
+  }
+  return result;
+}
+
+// Select existing monster definitions along a low-to-high path away from a capital.
+export function regionalTemplate<T extends { level: number }>(templates: readonly T[], camp: number, distance: number, safeRadius: number, minLevel: number, maxLevel: number): T {
+  const progress = Math.max(0, Math.min(1, (distance - safeRadius) / 750));
+  const target = minLevel + progress * (maxLevel - minLevel);
+  const ranked = templates.map((item, index) => ({ item, index, delta: Math.abs(item.level - target) }))
+    .sort((a, b) => a.delta - b.delta || a.index - b.index);
+  const nearest = ranked.filter(row => row.delta <= ranked[0].delta + 1);
+  return nearest[camp % nearest.length].item;
+}
+
 export class SpawnGrid<T> {
   private cells = new Map<number, T[]>();
   private key(x: number, z: number): number { return x + z * 1024; }

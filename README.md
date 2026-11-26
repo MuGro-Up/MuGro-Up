@@ -162,7 +162,13 @@ Las reglas base de ADMIN viajan en cada compilación. El panel publica cambios d
 
 <!-- coderabbit-ai-generated-section:v1:c1ca9399acc3671599261b7eb6667b0738ec8400866bbf479d8fa9aebe63915f -->
 
-Madrigal es un terreno común de 9,44 km² con cuatro regiones y cuatro portales interactivos en cada capital. Se puede caminar de una región a otra sin cargar un mapa nuevo. Los campamentos de diez se distribuyen una sola vez y mantienen la separación al aparecer. La tienda muestra el retrato disponible, precio y estadísticas de la pieza.
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:b96cd116aa201579a1970ba2adbcacc95861619f35821b7b32d83a25edef0eef -->
+
+Madrigal es un terreno común de 9,44 km² con cuatro regiones y cuatro portales interactivos en cada capital. Se puede caminar de una región a otra sin cargar un mapa nuevo. Se conservan los campamentos originales y se añaden grupos de diez en suelo válido, separados de los campamentos existentes y fuera de las capitales. Los grupos adicionales usan monstruos de la región con niveles que aumentan al alejarse de su capital. El minimapa marca los campamentos. La tienda muestra el retrato disponible, precio y estadísticas de la pieza.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 <!-- /coderabbit-ai-generated:v1 -->
 

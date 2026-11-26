@@ -5,7 +5,7 @@ import { flightHeight } from './content/WingRig';
 import { invasionSites, invasionWindow, type Invasion } from '../data/worldInvasions';
 import { applyMonsterRule, canonicalMap, modelMonsters, positionsAt } from '../data/liveWorld';
 import { getLiveWorld, refreshLiveWorld, worldInvasions } from '../services/liveWorldService';
-import { CAMP_SIZE, scatterCamps, SpawnGrid } from './encounters';
+import { CAMP_SIZE, populateCamps, regionalTemplate, SpawnGrid } from './encounters';
 import {
   AnimationGroup,
   ArcRotateCamera,
@@ -1157,7 +1157,7 @@ export class MuWorldEngine {
     this.monsterRoamLimit = 40;
     this.monsterScan = 0;
     const size = MU_MAPS[0].worldSize;
-    const camps = scatterCamps('madrigal',size,5000,(x,z)=>this.flyff.world.isHuntingLand(x,z) && !this.isSafePoint(x,z,12),madrigalSites);
+    const camps = populateCamps('madrigal',size,5000,(x,z)=>this.flyff.world.isHuntingLand(x,z) && !this.isSafePoint(x,z,12),madrigalSites);
     const sites = new Map(camps.filter((_,i)=>i%CAMP_SIZE === 0).map(m=>[m.camp,nearestRegion(MU_MAPS,m.x,m.z).id]));
     for (const map of MU_MAPS) this.addRegionMonsters(map,camps.filter(m=>sites.get(m.camp) === map.id),live,adminCfg);
     this.entityRevision = live.revision;
@@ -1166,7 +1166,7 @@ export class MuWorldEngine {
 
   private portalMaterial?: StandardMaterial;
 
-  private addRegionMonsters(map: MapDef, camps: ReturnType<typeof scatterCamps>, live: ReturnType<typeof getLiveWorld>, adminCfg: ReturnType<typeof getAdminConfigSync>) {
+  private addRegionMonsters(map: MapDef, camps: ReturnType<typeof populateCamps>, live: ReturnType<typeof getLiveWorld>, adminCfg: ReturnType<typeof getAdminConfigSync>) {
     const mapKey = map.id === 'puerto_bruma' ? 'puerto' : map.id === 'crater_ceniza' ? 'ceniza' : map.id;
     const extraCatalog = Array.isArray(adminCfg.monsters?.extraCatalog) ? adminCfg.monsters.extraCatalog : [];
     const glbOverrides: Record<string, string> = adminCfg.monsters?.glbOverrides || {};
@@ -1247,13 +1247,18 @@ export class MuWorldEngine {
 
     const total = Number(adminCfg['world-rules'].maps?.[mapKey]?.targetMonsterCount) || 40000;
     const campCount = Math.min(5000, Math.max(1, Math.ceil(total / CAMP_SIZE)));
+    const regional = templates.filter(t => !t.def.isBoss && t.def.level >= map.minLevel && t.def.level <= map.maxLevel);
+    const choices = (regional.length ? regional : templates.filter(t => !t.def.isBoss)).map(t => ({ level: t.def.level, template: t }));
+    const campTemplates = new Map<number, Template>();
     const placements: { entry: Template; mx: number; mz: number; angle: number; camp?: number }[] = camps.slice(0,campCount*CAMP_SIZE).map(
       ({ camp, x, z, heading, site }) => {
-        let entry = templates[camp % templates.length];
-        if (site) {
-          const matched = templates.find(t=>t.glb === 'monstruos/'+site.model+'.glb')!;
-          entry = { ...matched, def:{...matched.def, name:site.name, level:site.level} };
+        let entry = campTemplates.get(camp);
+        if (!entry) entry = regionalTemplate(choices, camp, Math.hypot(x-map.spawn.x,z-map.spawn.z), this.cityRadius(map, adminCfg['world-rules']), map.minLevel, map.maxLevel).template;
+        if (site && !campTemplates.has(camp)) {
+          const matched = templates.find(t=>t.glb === 'monstruos/'+site.model+'.glb');
+          if (matched) entry = { ...matched, def:{...matched.def, name:site.name, level:site.level} };
         }
+        campTemplates.set(camp, entry);
         return {entry, mx:x, mz:z, angle:heading, camp};
       },
     );
